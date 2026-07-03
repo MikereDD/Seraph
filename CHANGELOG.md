@@ -6,6 +6,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-07-03
+
+### Fixed
+- Album artwork writes no longer fail silently.
+- Album Match now stops with an error when cover art is enabled but no valid front cover is returned.
+- Tag writes re-read the edited cache file and verify embedded artwork before upload.
+- pCloud writes re-download the replaced file and verify embedded artwork before reporting success.
+
+
 ## [0.4.0] - 2026-07-03
 
 ### Added

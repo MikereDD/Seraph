@@ -145,15 +145,15 @@ class MusicBrainzClient {
         return out
     }
 
-    private fun get(url: String): String? = openThrottled(url) { conn ->
+    private fun get(url: String): String? = openThrottled(url, "application/json") { conn ->
         conn.inputStream.bufferedReader().use { it.readText() }
     }
 
-    private fun getBytes(url: String): ByteArray? = openThrottled(url) { conn ->
+    private fun getBytes(url: String): ByteArray? = openThrottled(url, "image/jpeg,image/png,*/*") { conn ->
         conn.inputStream.use { it.readBytes() }
     }
 
-    private fun <T> openThrottled(url: String, read: (HttpURLConnection) -> T): T? {
+    private fun <T> openThrottled(url: String, accept: String, read: (HttpURLConnection) -> T): T? {
         return try {
             throttleBlocking()
             val conn = (URL(url).openConnection() as HttpURLConnection).apply {
@@ -162,7 +162,7 @@ class MusicBrainzClient {
                 readTimeout = 12_000
                 instanceFollowRedirects = true
                 setRequestProperty("User-Agent", USER_AGENT)
-                setRequestProperty("Accept", "application/json")
+                setRequestProperty("Accept", accept)
             }
             if (conn.responseCode in 200..299) read(conn) else null.also { conn.disconnect() }
         } catch (_: IOException) {
@@ -187,6 +187,6 @@ class MusicBrainzClient {
         private const val MIN_SPACING_MS = 1100L
         // MusicBrainz asks that the app + contact be identifiable.
         const val USER_AGENT =
-            "Seraph/0.4.0 ( https://github.com/MikereDD/It-Works-On-My-Machine )"
+            "Seraph/0.4.2 ( https://github.com/MikereDD/It-Works-On-My-Machine )"
     }
 }

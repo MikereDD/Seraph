@@ -24,7 +24,12 @@ data class AlbumPlanRow(
     val proposedName: String,
 )
 
-data class AlbumApplyResult(val tagged: Int, val renamed: Int, val failed: Int)
+data class AlbumApplyResult(
+    val tagged: Int,
+    val renamed: Int,
+    val failed: Int,
+    val errors: List<String> = emptyList(),
+)
 
 /**
  * Matches a folder's audio files to a MusicBrainz release's tracklist, then
@@ -151,7 +156,18 @@ class AlbumMatchService(
         doRename: Boolean,
         embedArt: Boolean,
     ): AlbumApplyResult = withContext(Dispatchers.IO) {
-        val art = if (embedArt) runCatching { mb.frontCover(release.mbid) }.getOrNull() else null
+        val errors = ArrayList<String>()
+        val art = if (embedArt) {
+            mb.frontCover(release.mbid)?.takeIf { it.size >= MIN_ARTWORK_BYTES }
+                ?: return@withContext AlbumApplyResult(
+                    tagged = 0,
+                    renamed = 0,
+                    failed = rows.size,
+                    errors = listOf("Cover art was enabled, but no valid front cover was returned for this release."),
+                )
+        } else {
+            null
+        }
         var tagged = 0
         var failed = 0
         val taggedRows = ArrayList<AlbumPlanRow>()
@@ -165,7 +181,10 @@ class AlbumMatchService(
                     // optional rename pass so we do not rename stale originals.
                     taggedRows += row.copy(file = updated)
                 }
-                .onFailure { failed++ }
+                .onFailure { e ->
+                    failed++
+                    errors += "${row.file.displayName}: ${e.message ?: e::class.java.simpleName}"
+                }
         }
         var renamed = 0
         if (doRename) {
@@ -173,7 +192,12 @@ class AlbumMatchService(
             val result = rename.apply(RenamePlan(listOf(FolderGroup(folderName, items))))
             renamed = result.renamed
             failed += result.failed
+            if (result.failed > 0) errors += "Rename failed for ${result.failed} file(s)."
         }
-        AlbumApplyResult(tagged = tagged, renamed = renamed, failed = failed)
+        AlbumApplyResult(tagged = tagged, renamed = renamed, failed = failed, errors = errors)
+    }
+
+    companion object {
+        private const val MIN_ARTWORK_BYTES = 128
     }
 }

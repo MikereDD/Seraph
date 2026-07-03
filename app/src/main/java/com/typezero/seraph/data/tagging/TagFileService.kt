@@ -29,7 +29,21 @@ class TagFileService(
         val cache = source.readToCache(file)
         try {
             tagger.write(cache, tags)
-            source.writeBack(file, cache)
+            if (tags.artwork != null && !tagger.hasArtwork(cache)) {
+                throw IllegalStateException("Artwork verification failed before upload")
+            }
+            val updated = source.writeBack(file, cache)
+            if (tags.artwork != null) {
+                val verifyCache = source.readToCache(updated)
+                try {
+                    if (!tagger.hasArtwork(verifyCache)) {
+                        throw IllegalStateException("Artwork verification failed after upload")
+                    }
+                } finally {
+                    verifyCache.delete()
+                }
+            }
+            updated
         } finally {
             cache.delete()
         }

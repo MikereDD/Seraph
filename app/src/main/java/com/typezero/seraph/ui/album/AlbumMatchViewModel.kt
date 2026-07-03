@@ -150,7 +150,9 @@ class AlbumMatchViewModel(
         viewModelScope.launch {
             val res = runCatching {
                 service.apply(st.rows, release, st.folderName, st.rename, st.embedArt)
-            }.getOrElse { com.typezero.seraph.data.album.AlbumApplyResult(0, 0, st.rows.size) }
+            }.getOrElse { e ->
+                com.typezero.seraph.data.album.AlbumApplyResult(0, 0, st.rows.size, listOf(e.message ?: e::class.java.simpleName))
+            }
             if (res.failed == 0) {
                 _applied.send(Unit)
             } else {
@@ -158,7 +160,10 @@ class AlbumMatchViewModel(
                     it.copy(
                         stage = AlbumStage.Review,
                         busy = false,
-                        message = "Tagged ${res.tagged}, renamed ${res.renamed}, ${res.failed} failed.",
+                        message = buildString {
+                            append("Tagged ${res.tagged}, renamed ${res.renamed}, ${res.failed} failed.")
+                            res.errors.firstOrNull()?.let { append("\n").append(it) }
+                        },
                     )
                 }
             }
