@@ -11,7 +11,7 @@ import java.io.File
  *
  * Both sources funnel content through a local cache File: jaudiotagger needs a
  * real file to read/write, so [readToCache] hands one back and [writeBack]
- * pushes the edited bytes home (a ContentResolver write for SAF, an upload for
+ * pushes the edited bytes home and returns the updated file reference (a ContentResolver write for SAF, an upload for
  * pCloud). Renames are handled natively by each backend — a DocumentsContract
  * call for SAF, a single server-side renamefile for pCloud.
  */
@@ -31,7 +31,7 @@ interface StorageSource {
     suspend fun listChildren(folderId: String?): FolderListing
 
     suspend fun readToCache(file: AudioFile): File
-    suspend fun writeBack(file: AudioFile, cache: File)
+    suspend fun writeBack(file: AudioFile, cache: File): AudioFile
     suspend fun rename(file: AudioFile, newName: String): AudioFile
 
     companion object {

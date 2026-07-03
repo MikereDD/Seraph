@@ -92,11 +92,12 @@ class SafStorageSource(private val context: Context) : StorageSource {
         cache
     }
 
-    override suspend fun writeBack(file: AudioFile, cache: File): Unit = withContext(Dispatchers.IO) {
+    override suspend fun writeBack(file: AudioFile, cache: File): AudioFile = withContext(Dispatchers.IO) {
         val uri = Uri.parse(file.id)
         context.contentResolver.openOutputStream(uri, "wt")?.use { output ->
             cache.inputStream().use { it.copyTo(output, DEFAULT_BUFFER_SIZE) }
         } ?: throw IllegalStateException("Could not write ${file.displayName}")
+        file
     }
 
     override suspend fun rename(file: AudioFile, newName: String): AudioFile = withContext(Dispatchers.IO) {

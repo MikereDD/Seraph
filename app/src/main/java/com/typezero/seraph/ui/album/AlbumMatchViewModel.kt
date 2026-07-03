@@ -19,6 +19,14 @@ import kotlinx.coroutines.launch
 
 enum class AlbumStage { Searching, Pick, Review, Applying }
 
+data class AlbumPreviewSummary(
+    val files: Int = 0,
+    val tagWrites: Int = 0,
+    val artworkWrites: Int = 0,
+    val renames: Int = 0,
+    val changedTagFields: Int = 0,
+)
+
 data class AlbumUiState(
     val folderName: String = "",
     val query: String = "",
@@ -26,10 +34,12 @@ data class AlbumUiState(
     val candidates: List<ReleaseCandidate> = emptyList(),
     val release: ReleaseDetail? = null,
     val rows: List<AlbumPlanRow> = emptyList(),
-    val rename: Boolean = true,
+    val rename: Boolean = false,
     val embedArt: Boolean = true,
     val busy: Boolean = false,
     val message: String? = null,
+    val showApplyConfirm: Boolean = false,
+    val preview: AlbumPreviewSummary = AlbumPreviewSummary(),
 )
 
 class AlbumMatchViewModel(
@@ -80,6 +90,7 @@ class AlbumMatchViewModel(
             }
             val planResult = runCatching { service.plan(files, release, template) }
             val rows = planResult.getOrDefault(emptyList())
+            val preview = buildPreview(rows, rename = _state.value.rename, embedArt = _state.value.embedArt)
             val err = planResult.exceptionOrNull()
             _state.update {
                 it.copy(
@@ -87,6 +98,7 @@ class AlbumMatchViewModel(
                     busy = false,
                     release = release,
                     rows = rows,
+                    preview = preview,
                     message = when {
                         err != null -> "Match error: ${err.javaClass.simpleName}: ${err.message}"
                         rows.isEmpty() -> "No tracks matched (${files.size} files, ${release.total} tracks)."
@@ -101,14 +113,40 @@ class AlbumMatchViewModel(
         it.copy(stage = AlbumStage.Pick, release = null, rows = emptyList(), message = null)
     }
 
-    fun toggleRename() = _state.update { it.copy(rename = !it.rename) }
-    fun toggleArt() = _state.update { it.copy(embedArt = !it.embedArt) }
+    fun toggleRename() = _state.update {
+        val nextRename = !it.rename
+        it.copy(rename = nextRename, preview = buildPreview(it.rows, nextRename, it.embedArt))
+    }
+
+    fun toggleArt() = _state.update {
+        val nextArt = !it.embedArt
+        it.copy(embedArt = nextArt, preview = buildPreview(it.rows, it.rename, nextArt))
+    }
+
+    fun requestApply() = _state.update { it.copy(showApplyConfirm = true) }
+
+    fun cancelApply() = _state.update { it.copy(showApplyConfirm = false) }
+
+    private fun buildPreview(
+        rows: List<AlbumPlanRow>,
+        rename: Boolean,
+        embedArt: Boolean,
+    ): AlbumPreviewSummary {
+        val tagFieldsPerRow = 6 // title, artist, album, album artist, track number, track total/year bucket
+        return AlbumPreviewSummary(
+            files = rows.size,
+            tagWrites = rows.size,
+            artworkWrites = if (embedArt) rows.size else 0,
+            renames = if (rename) rows.count { it.file.displayName != it.proposedName } else 0,
+            changedTagFields = rows.size * tagFieldsPerRow,
+        )
+    }
 
     fun apply() {
         val st = _state.value
         val release = st.release ?: return
         if (st.rows.isEmpty()) return
-        _state.update { it.copy(stage = AlbumStage.Applying, busy = true, message = null) }
+        _state.update { it.copy(stage = AlbumStage.Applying, busy = true, message = null, showApplyConfirm = false) }
         viewModelScope.launch {
             val res = runCatching {
                 service.apply(st.rows, release, st.folderName, st.rename, st.embedArt)

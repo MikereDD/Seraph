@@ -138,30 +138,88 @@ class PCloudClient(private val session: PCloudSession) {
             cache
         }
 
-    /** Uploads [file] into [folderId] as [filename]; same-name files are overwritten. */
-    suspend fun uploadOverwrite(folderId: String, filename: String, file: File): Unit =
-        withContext(Dispatchers.IO) {
-            val url = "${base()}/uploadfile?folderid=$folderId&filename=${enc(filename)}" +
-                "&nopartial=1&auth=${enc(token())}"
-            val boundary = "----att${System.nanoTime()}"
-            val conn = (URL(url).openConnection() as HttpURLConnection).apply {
-                requestMethod = "POST"
-                doOutput = true
-                connectTimeout = 20_000; readTimeout = 120_000
-                setRequestProperty("Content-Type", "multipart/form-data; boundary=$boundary")
-            }
-            conn.outputStream.use { os ->
-                val header = ("--$boundary\r\n" +
-                    "Content-Disposition: form-data; name=\"file\"; filename=\"$filename\"\r\n" +
-                    "Content-Type: application/octet-stream\r\n\r\n").toByteArray()
-                os.write(header)
-                file.inputStream().use { it.copyTo(os, DEFAULT_BUFFER_SIZE) }
-                os.write("\r\n--$boundary--\r\n".toByteArray())
-            }
-            val body = conn.inputStream.bufferedReader().use { it.readText() }
-            val result = JSONObject(body).optInt("result", -1)
-            if (result != 0) throw IOException("pCloud upload failed (result=$result)")
+    /**
+     * Replace an existing pCloud file without creating a same-name duplicate.
+     *
+     * pCloud's uploadfile endpoint can create an additional file when a same-name
+     * object already exists. For tag writes, that is wrong: metadata edits should
+     * keep the visible filename unless the user runs Rename.
+     *
+     * Safe replace flow:
+     * 1. upload edited bytes with a unique temporary name;
+     * 2. rename the original fileid to a backup name;
+     * 3. rename the uploaded temp file to the original visible name;
+     * 4. delete the backup.
+     *
+     * If anything fails before step 3, the original is restored/kept. The returned
+     * AudioFile has the new pCloud fileid, which matters for a later rename pass.
+     */
+    suspend fun replaceFile(original: AudioFile, edited: File): AudioFile = withContext(Dispatchers.IO) {
+        val ext = original.displayName.substringAfterLast('.', "")
+        val suffix = if (ext.isBlank()) "" else ".$ext"
+        val stamp = System.nanoTime()
+        val tempName = "seraph_upload_tmp_${stamp}$suffix"
+        val backupName = "seraph_backup_${stamp}_${original.displayName}"
+
+        val uploaded = uploadNewFile(original.parentId, tempName, edited)
+        var originalMoved = false
+        try {
+            renameFile(original.id, backupName)
+            originalMoved = true
+            renameFile(uploaded.id, original.displayName)
+            runCatching { deleteFile(original.id) }
+            uploaded.copy(displayName = original.displayName)
+        } catch (e: Exception) {
+            if (originalMoved) runCatching { renameFile(original.id, original.displayName) }
+            runCatching { deleteFile(uploaded.id) }
+            throw e
         }
+    }
+
+    /** Uploads [file] into [folderId] as a new unique [filename]. */
+    private fun uploadNewFile(folderId: String, filename: String, file: File): AudioFile {
+        val url = "${base()}/uploadfile?folderid=$folderId&filename=${enc(filename)}" +
+            "&nopartial=1&auth=${enc(token())}"
+        val boundary = "----att${System.nanoTime()}"
+        val conn = (URL(url).openConnection() as HttpURLConnection).apply {
+            requestMethod = "POST"
+            doOutput = true
+            connectTimeout = 20_000; readTimeout = 120_000
+            setRequestProperty("Content-Type", "multipart/form-data; boundary=$boundary")
+        }
+        conn.outputStream.use { os ->
+            val header = ("--$boundary\r\n" +
+                "Content-Disposition: form-data; name=\"file\"; filename=\"$filename\"\r\n" +
+                "Content-Type: application/octet-stream\r\n\r\n").toByteArray()
+            os.write(header)
+            file.inputStream().use { it.copyTo(os, DEFAULT_BUFFER_SIZE) }
+            os.write("\r\n--$boundary--\r\n".toByteArray())
+        }
+        val body = conn.inputStream.bufferedReader().use { it.readText() }
+        val json = JSONObject(body)
+        val result = json.optInt("result", -1)
+        if (result != 0) throw IOException("pCloud upload failed (result=$result): ${json.optString("error")}")
+
+        val metadata = json.optJSONArray("metadata")?.optJSONObject(0)
+            ?: json.optJSONObject("metadata")
+            ?: throw IOException("pCloud upload did not return file metadata")
+        return AudioFile(
+            sourceId = StorageSource.PCLOUD,
+            id = metadata.optLong("fileid").toString(),
+            displayName = metadata.optString("name", filename),
+            mimeType = metadata.optString("contenttype", "audio/*"),
+            sizeBytes = metadata.optLong("size", file.length()),
+            parentId = folderId,
+            parentName = "",
+        )
+    }
+
+    /** Server-side delete. */
+    suspend fun deleteFile(fileId: String): Unit = withContext(Dispatchers.IO) {
+        val url = "${base()}/deletefile?fileid=$fileId&auth=${enc(token())}"
+        val result = getJson(url).optInt("result", -1)
+        if (result != 0) throw IOException("pCloud delete failed (result=$result)")
+    }
 
     /** Server-side rename — no download needed. fileid is preserved. */
     suspend fun renameFile(fileId: String, newName: String): Unit = withContext(Dispatchers.IO) {

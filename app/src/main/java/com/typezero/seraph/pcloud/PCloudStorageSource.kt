@@ -47,8 +47,8 @@ class PCloudStorageSource(
     override suspend fun readToCache(file: AudioFile): File =
         client.downloadToCache(file.id, file.displayName, cacheDir)
 
-    override suspend fun writeBack(file: AudioFile, cache: File) =
-        client.uploadOverwrite(file.parentId, file.displayName, cache)
+    override suspend fun writeBack(file: AudioFile, cache: File): AudioFile =
+        client.replaceFile(file, cache)
 
     override suspend fun rename(file: AudioFile, newName: String): AudioFile {
         client.renameFile(file.id, newName)

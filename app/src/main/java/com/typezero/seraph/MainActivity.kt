@@ -128,7 +128,9 @@ private fun AppRoot(factory: ViewModelFactory) {
             onPick = { albumVm.pick(it) },
             onToggleRename = { albumVm.toggleRename() },
             onToggleArt = { albumVm.toggleArt() },
-            onApply = { albumVm.apply() },
+            onRequestApply = { albumVm.requestApply() },
+            onConfirmApply = { albumVm.apply() },
+            onCancelApply = { albumVm.cancelApply() },
             onBackToPick = { albumVm.backToPick() },
             onBack = { showAlbum = false },
         )

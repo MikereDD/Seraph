@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -17,8 +16,11 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -33,6 +35,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -49,10 +52,20 @@ fun AlbumMatchScreen(
     onPick: (ReleaseCandidate) -> Unit,
     onToggleRename: () -> Unit,
     onToggleArt: () -> Unit,
-    onApply: () -> Unit,
+    onRequestApply: () -> Unit,
+    onConfirmApply: () -> Unit,
+    onCancelApply: () -> Unit,
     onBackToPick: () -> Unit,
     onBack: () -> Unit,
 ) {
+    if (state.showApplyConfirm) {
+        ApplyConfirmDialog(
+            state = state,
+            onConfirm = onConfirmApply,
+            onDismiss = onCancelApply,
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -81,10 +94,14 @@ fun AlbumMatchScreen(
         Column(Modifier.fillMaxSize().padding(pad)) {
             when (state.stage) {
                 AlbumStage.Searching -> Busy("Searching MusicBrainz…")
-                AlbumStage.Applying -> Busy("Applying tags…")
+                AlbumStage.Applying -> Busy("Applying tags safely…")
                 AlbumStage.Pick -> PickStage(state, onQueryChange, onSearch, onPick)
                 AlbumStage.Review -> ReviewStage(
-                    state, onToggleRename, onToggleArt, onApply, onBackToPick,
+                    state = state,
+                    onToggleRename = onToggleRename,
+                    onToggleArt = onToggleArt,
+                    onApply = onRequestApply,
+                    onBackToPick = onBackToPick,
                 )
             }
         }
@@ -180,8 +197,9 @@ private fun ReviewStage(
                 TextButton(onClick = onBackToPick) { Text("Choose a different release") }
             }
             HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
-            ToggleRow("Rename files to match", state.rename, onToggleRename)
+            PreviewCard(state)
             ToggleRow("Embed album cover art", state.embedArt, onToggleArt)
+            ToggleRow("Rename files after tagging", state.rename, onToggleRename)
             HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
             state.message?.let { Hint(it) }
         }
@@ -194,12 +212,60 @@ private fun ReviewStage(
                     enabled = state.rows.isNotEmpty() && !state.busy,
                 ) {
                     Text(
-                        if (state.rename) "Tag & rename ${state.rows.size} files"
-                        else "Tag ${state.rows.size} files",
+                        if (state.rename) "Review & apply tags + rename"
+                        else "Review & apply tags",
                     )
                 }
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "Dry run preview only. Nothing is written until you confirm.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
+    }
+}
+
+@Composable
+private fun PreviewCard(state: AlbumUiState) {
+    val release = state.release
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth().padding(16.dp, 12.dp),
+        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+    ) {
+        Column(Modifier.fillMaxWidth().padding(16.dp)) {
+            Text("Dry run preview", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Spacer(Modifier.height(10.dp))
+            PreviewLine("Album", release?.title.orEmpty().ifBlank { "—" })
+            PreviewLine("Album artist", release?.artist.orEmpty().ifBlank { "—" })
+            PreviewLine("Year", release?.year.orEmpty().ifBlank { "—" })
+            HorizontalDivider(Modifier.padding(vertical = 10.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.16f))
+            PreviewLine("Files to tag", state.preview.tagWrites.toString())
+            PreviewLine("Tag fields planned", state.preview.changedTagFields.toString())
+            PreviewLine("Artwork writes", if (state.embedArt) state.preview.artworkWrites.toString() else "Off")
+            PreviewLine("Renames", if (state.rename) state.preview.renames.toString() else "Off")
+        }
+    }
+}
+
+@Composable
+private fun PreviewLine(label: String, value: String) {
+    Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.Top) {
+        Text(
+            label,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f),
+        )
+        Text(
+            value,
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Medium,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1.2f),
+        )
     }
 }
 
@@ -232,7 +298,14 @@ private fun RowItem(row: AlbumPlanRow, showRename: Boolean) {
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                "was: ${row.file.displayName}",
+                "Tags → ${row.artist} · ${row.tags.album}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                "File: ${row.file.displayName}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
@@ -240,7 +313,7 @@ private fun RowItem(row: AlbumPlanRow, showRename: Boolean) {
             )
             if (showRename) {
                 Text(
-                    "→ ${row.proposedName}",
+                    "Rename → ${row.proposedName}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary,
                     maxLines = 1,
@@ -250,6 +323,39 @@ private fun RowItem(row: AlbumPlanRow, showRename: Boolean) {
         }
     }
     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
+}
+
+@Composable
+private fun ApplyConfirmDialog(
+    state: AlbumUiState,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Apply these changes?") },
+        text = {
+            Column {
+                Text("Seraph will update ${state.preview.files} files.")
+                Spacer(Modifier.height(8.dp))
+                Text("Tags: ${state.preview.tagWrites} files")
+                Text("Artwork: ${if (state.embedArt) "${state.preview.artworkWrites} files" else "Off"}")
+                Text("Rename: ${if (state.rename) "${state.preview.renames} files" else "Off"}")
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "Tagging replaces the original file. Renaming only happens when the rename switch is on.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        },
+        confirmButton = {
+            Button(onClick = onConfirm) { Text("Apply") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        },
+    )
 }
 
 @Composable

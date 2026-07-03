@@ -6,6 +6,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-07-03
+
+### Added
+- Added Album Match dry-run preview before applying changes.
+- Added an apply confirmation dialog showing tag writes, artwork writes, and optional renames.
+- Added clearer per-track preview rows showing planned tags and optional rename targets.
+
+### Changed
+- Album Match now defaults to tagging only; renaming remains opt-in.
+- pCloud tag writes replace the original remote file so metadata edits do not leave duplicate copies.
+
 ## [0.3.0] - 2026-06-14
 
 ### Fixed
@@ -84,8 +95,9 @@ Android, the tagging companion to the video-to-audio extractor.
   currently keys off existing tags / filename).
 - pCloud folder browser — currently lists from a configured root folder; the
   token is in plain `SharedPreferences` (swap to `EncryptedSharedPreferences`).
-- Whole-album batch tagging; no undo yet (saves and renames are immediate).
+- Undo is not implemented yet. v0.4.0 adds preview/confirm first so album changes are safer before they are applied.
 
-[Unreleased]: https://github.com/MikereDD/It-Works-On-My-Machine/compare/seraph-v0.3.0...HEAD
+[Unreleased]: https://github.com/MikereDD/It-Works-On-My-Machine/compare/seraph-v0.4.0...HEAD
+[0.4.0]: https://github.com/MikereDD/It-Works-On-My-Machine/compare/seraph-v0.3.0...seraph-v0.4.0
 [0.3.0]: https://github.com/MikereDD/It-Works-On-My-Machine/compare/seraph-v0.1.0...seraph-v0.3.0
 [0.1.0]: https://github.com/MikereDD/It-Works-On-My-Machine/releases/tag/seraph-v0.1.0

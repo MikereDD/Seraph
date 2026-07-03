@@ -68,7 +68,7 @@ fun AboutScreen(
     }
     val version = remember {
         runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }
-            .getOrNull() ?: "0.3.0"
+            .getOrNull() ?: "0.4.0"
     }
 
     Scaffold(

@@ -24,7 +24,7 @@ class TagFileService(
         }
     }
 
-    suspend fun write(file: AudioFile, tags: Tags): Unit = withContext(Dispatchers.IO) {
+    suspend fun write(file: AudioFile, tags: Tags): AudioFile = withContext(Dispatchers.IO) {
         val source = sources.forFile(file)
         val cache = source.readToCache(file)
         try {

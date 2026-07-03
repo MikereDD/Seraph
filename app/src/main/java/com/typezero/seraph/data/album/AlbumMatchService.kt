@@ -154,15 +154,22 @@ class AlbumMatchService(
         val art = if (embedArt) runCatching { mb.frontCover(release.mbid) }.getOrNull() else null
         var tagged = 0
         var failed = 0
+        val taggedRows = ArrayList<AlbumPlanRow>()
         for (row in rows) {
             val tags = if (art != null) row.tags.copy(artwork = art) else row.tags
             runCatching { tagging.write(row.file, tags) }
-                .onSuccess { tagged++ }
+                .onSuccess { updated ->
+                    tagged++
+                    // pCloud tag writes replace the server-side file and therefore
+                    // receive a new fileid. Keep that updated reference for the
+                    // optional rename pass so we do not rename stale originals.
+                    taggedRows += row.copy(file = updated)
+                }
                 .onFailure { failed++ }
         }
         var renamed = 0
         if (doRename) {
-            val items = rows.map { RenameItem(it.file, it.file.displayName, it.proposedName) }
+            val items = taggedRows.map { RenameItem(it.file, it.file.displayName, it.proposedName) }
             val result = rename.apply(RenamePlan(listOf(FolderGroup(folderName, items))))
             renamed = result.renamed
             failed += result.failed

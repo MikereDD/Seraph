@@ -4,7 +4,7 @@
 
 <h1 align="center">Seraph</h1>
 
-<p align="center"><strong>v0.3.0</strong></p>
+<p align="center"><strong>v0.4.0</strong></p>
 
 <p align="center">
 A <strong>Material 3 + Jetpack Compose</strong> audio <strong>tagger</strong> for Android — the tagging
@@ -14,14 +14,14 @@ folders from a template.
 </p>
 
 <p align="center">
-  <a href="https://github.com/MikereDD/It-Works-On-My-Machine/raw/main/Android/Seraph/releases/Seraph-v0.3.0.apk"><strong>Download the APK (v0.3.0)</strong></a>
+  <a href="https://github.com/MikereDD/It-Works-On-My-Machine/raw/main/Android/Seraph/releases/Seraph-v0.4.0.apk"><strong>Download the APK (v0.4.0)</strong></a>
 </p>
 
 ---
 
 ## Install
 
-1. Download **[Seraph-v0.3.0.apk](https://github.com/MikereDD/It-Works-On-My-Machine/raw/main/Android/Seraph/releases/Seraph-v0.3.0.apk)** and copy it to your phone.
+1. Download **[Seraph-v0.4.0.apk](https://github.com/MikereDD/It-Works-On-My-Machine/raw/main/Android/Seraph/releases/Seraph-v0.4.0.apk)** and copy it to your phone.
 2. Open it with a file manager and install. You'll see Google **Play Protect**'s "unknown developer" notice — tap **More details -> Install anyway**. That's expected for a sideloaded personal build.
 3. Launch **Seraph**, then pick a source: **Device** to choose a folder, or **pCloud** to sign in (Google sign-in and two-factor are handled on pCloud's own page).
 
@@ -33,8 +33,9 @@ folders from a template.
 - **Browse by directory** — drill into albums, **Back** or the up arrow climbs out. pCloud is scoped to just `/Music` and `/Books/Audiobooks` (edit `PCloudConfig.SCAN_PATHS`).
 - **Read & write tags** for MP3, FLAC, M4A/MP4, Ogg, Opus, WAV, AAC, WMA via **jaudiotagger**, including embedded front-cover art.
 - **MusicBrainz lookup** + Cover Art Archive covers — suggestions fill the fields, but **every value stays hand-editable**.
-- **Album match** — point a whole folder (or a multi-selected subset) at a MusicBrainz release; Seraph matches each file to a track by **title**, then writes tags, embeds the cover, and renames — in one pass, on device or pCloud.
+- **Album match** — point a whole folder (or a multi-selected subset) at a MusicBrainz release; Seraph matches each file to a track by **title**, shows a **dry-run preview**, then writes tags, embeds the cover, and optionally renames in one safe pass, on device or pCloud.
 - **Multi-select** — long-press a track to start selecting, tap to add more, select-all for the folder; album-match and rename then act on just the selection.
+- **Safe apply preview** — album matching shows the release, planned tag writes, artwork writes, and optional renames before anything is written.
 - **Per-folder batch rename** from a token template (`{track} of {total} - {artist} - {title}` …), with a live preview and Android/Windows-safe names.
 - **pCloud sign-in via pCloud's own web login** (**2FA supported**) — only the resulting token is stored, never your password.
 
@@ -104,6 +105,8 @@ app/src/main/java/com/typezero/seraph/
 ## Notes
 
 - jaudiotagger needs a real file, so every edit routes through a local cache file: a `ContentResolver` read/write for SAF, a download + re-upload for pCloud. Renames are native — a `DocumentsContract` call for SAF, a single server-side `renamefile` for pCloud.
+- Album Match defaults to **write tags only**. File renaming is a separate switch so metadata tagging does not surprise you by changing filenames.
+- pCloud tag writes replace the original remote file instead of leaving duplicate uploaded copies.
 - The pCloud token lives in plain app-private prefs. For encryption, wrap `PCloudSession` with `EncryptedSharedPreferences` (`androidx.security:security-crypto`).
 - Which folders Seraph touches is set in one place — `PCloudConfig.SCAN_PATHS`.
 
