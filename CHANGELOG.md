@@ -1,3 +1,12 @@
+## [0.4.3-dev.3] - 2026-08-01
+
+### Changed
+- Redesigned the Tag Editor around the approved premium Seraph visual language.
+- Added an artwork-led editor header with a focused metadata lookup action.
+- Grouped core metadata and track details into layered graphite cards.
+- Restyled MusicBrainz candidates with confidence indicators and recommended-match emphasis.
+- Added a dedicated embedded-artwork summary card and stronger save states.
+
 # Changelog
 
 ## 0.4.3-dev.2 - Premium Library foundation
