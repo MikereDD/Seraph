@@ -146,3 +146,10 @@ Android, the tagging companion to the video-to-audio extractor.
 - Added a scoped FileProvider for installer handoff.
 - Aligned source version metadata at 0.4.3.
 - Added an example update manifest for release publishing.
+
+## 0.4.3-dev.4
+
+- Rebuilt Album Match with the premium Seraph visual system.
+- Added a current-folder summary and highlighted recommended release.
+- Added refined alternate-release cards and a premium online search action.
+- Redesigned release review, dry-run summary, options, track plan, and confirmation dialog.
