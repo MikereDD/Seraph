@@ -187,6 +187,6 @@ class MusicBrainzClient {
         private const val MIN_SPACING_MS = 1100L
         // MusicBrainz asks that the app + contact be identifiable.
         const val USER_AGENT =
-            "Seraph/0.4.2 ( https://github.com/MikereDD/It-Works-On-My-Machine )"
+            "Seraph/0.4.3-dev.5 ( https://github.com/MikereDD/It-Works-On-My-Machine )"
     }
 }

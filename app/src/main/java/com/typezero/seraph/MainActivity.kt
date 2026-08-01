@@ -132,6 +132,7 @@ private fun AppRoot(factory: ViewModelFactory) {
             onConfirmApply = { albumVm.apply() },
             onCancelApply = { albumVm.cancelApply() },
             onBackToPick = { albumVm.backToPick() },
+            onFinishResult = { albumVm.finishResult() },
             onBack = { showAlbum = false },
         )
         showWebLogin -> PCloudWebLogin(

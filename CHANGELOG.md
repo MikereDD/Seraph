@@ -1,3 +1,35 @@
+# Changelog
+
+All notable changes to Seraph are documented here.
+
+## [Unreleased]
+
+## [0.4.3-dev.5] - 2026-08-01
+
+### Fixed
+- Album Match no longer falls back to searching MusicBrainz for `Seraph`; its initial query now uses common embedded album/artist metadata, then the actual parent folder, then a cleaned filename.
+- Empty or unresolved album searches now remain editable instead of sending an app-name query.
+- Tag Editor artwork now distinguishes loading, missing, unreadable, and successfully decoded artwork states.
+- Post-write artwork verification now reads the uploaded file back and confirms actual embedded artwork bytes.
+- Album application no longer silently returns to the dry-run screen after completion or partial failure.
+
+### Added
+- Live album-tagging progress showing completed file count and the current filename.
+- Persistent Album Match result screen showing tagged files, artwork writes, renames, failures, and error details.
+- Explicit **Return to library** action after reviewing the result.
+
+### Changed
+- Bumped Android source to `v0.4.3-dev.5` with `versionCode 50`.
+- Synchronized README, changelog, and example update manifest version metadata.
+
+## [0.4.3-dev.4] - 2026-08-01
+
+### Changed
+- Rebuilt Album Match with the premium Seraph visual system.
+- Added a current-folder summary and highlighted recommended release.
+- Added refined alternate-release cards and a premium online search action.
+- Redesigned release review, dry-run summary, options, track plan, and confirmation dialog.
+
 ## [0.4.3-dev.3] - 2026-08-01
 
 ### Changed
@@ -7,30 +39,18 @@
 - Restyled MusicBrainz candidates with confidence indicators and recommended-match emphasis.
 - Added a dedicated embedded-artwork summary card and stronger save states.
 
-# Changelog
+## [0.4.3-dev.2] - 2026-08-01
 
-## 0.4.3-dev.2 - Premium Library foundation
+### Changed
+- Rebuilt the Library screen around the approved premium Seraph mockup.
+- Added layered graphite surfaces, source cards, folder cards, premium file rows, and the persistent selection action bar.
 
-- Rebuild the Library screen around the approved premium Seraph mockup.
-- Add layered graphite surfaces with restrained teal and violet accents.
-- Add polished device and pCloud source cards with connected/selected states.
-- Add compact source breadcrumbs and two-column folder cards.
-- Redesign music rows with premium selection states and metadata hierarchy.
-- Move batch actions into a persistent bottom selection bar.
-- Improve loading, empty-library, section, and notice presentation.
-- Bump Android version code to 47 for safe in-place development upgrades.
+## [0.4.3-dev.1] - 2026-07-31
 
-## 0.4.3-dev.1
-
-- Corrected Android `versionCode` to 46 so this development build upgrades cleanly from the existing versionCode 45 installation.
-- Began the premium visual refresh with a deeper graphite theme, stronger typography, refined shapes, elevated source selectors, and card-based library rows.
-- Added the updater foundation and initial audit fixes.
-
-All notable changes to Seraph are documented here.
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-## [Unreleased]
+### Added
+- Added the updater foundation and initial audit repairs.
+- Began the premium visual refresh.
+- Corrected Android `versionCode` to 46.
 
 ## [0.4.1] - 2026-07-03
 
@@ -136,20 +156,3 @@ Android, the tagging companion to the video-to-audio extractor.
 [0.4.0]: https://github.com/MikereDD/It-Works-On-My-Machine/compare/seraph-v0.3.0...seraph-v0.4.0
 [0.3.0]: https://github.com/MikereDD/It-Works-On-My-Machine/compare/seraph-v0.1.0...seraph-v0.3.0
 [0.1.0]: https://github.com/MikereDD/It-Works-On-My-Machine/releases/tag/seraph-v0.1.0
-
-## 0.4.3
-
-- Added a manual in-app updater entry point in About.
-- Update downloads require HTTPS from an approved GitHub host.
-- Downloaded APKs are verified against the published SHA-256.
-- Update package name and signing certificate must match the installed Seraph app before installation.
-- Added a scoped FileProvider for installer handoff.
-- Aligned source version metadata at 0.4.3.
-- Added an example update manifest for release publishing.
-
-## 0.4.3-dev.4
-
-- Rebuilt Album Match with the premium Seraph visual system.
-- Added a current-folder summary and highlighted recommended release.
-- Added refined alternate-release cards and a premium online search action.
-- Redesigned release review, dry-run summary, options, track plan, and confirmation dialog.

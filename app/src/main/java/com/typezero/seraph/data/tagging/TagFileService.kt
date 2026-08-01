@@ -36,7 +36,8 @@ class TagFileService(
             if (tags.artwork != null) {
                 val verifyCache = source.readToCache(updated)
                 try {
-                    if (!tagger.hasArtwork(verifyCache)) {
+                    val verified = tagger.read(verifyCache).artwork
+                    if (verified == null || verified.size < 128) {
                         throw IllegalStateException("Artwork verification failed after upload")
                     }
                 } finally {

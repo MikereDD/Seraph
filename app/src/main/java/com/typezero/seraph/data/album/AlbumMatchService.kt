@@ -149,12 +149,40 @@ class AlbumMatchService(
         return s.split(' ').filter { it.length >= 2 }.toSet()
     }
 
+
+    /** Builds a useful initial MusicBrainz query from actual file metadata. */
+    suspend fun suggestQuery(files: List<AudioFile>, folderName: String): String = withContext(Dispatchers.IO) {
+        val samples = files.take(8).mapNotNull { file ->
+            runCatching { tagging.read(file) }.getOrNull()
+        }
+        val album = samples.map { it.album.trim() }.filter { it.isNotBlank() }
+            .groupingBy { it }.eachCount().maxByOrNull { it.value }?.key.orEmpty()
+        val artist = samples.map { (it.albumArtist.ifBlank { it.artist }).trim() }.filter { it.isNotBlank() }
+            .groupingBy { it }.eachCount().maxByOrNull { it.value }?.key.orEmpty()
+        when {
+            album.isNotBlank() && artist.isNotBlank() -> "$artist $album"
+            album.isNotBlank() -> album
+            folderName.isUsefulFolderName() -> folderName.trim()
+            else -> files.firstOrNull()?.displayName
+                ?.substringBeforeLast('.')
+                ?.replace(Regex("""^[\s(\[]*\d{1,3}[)\].\s_-]*"""), "")
+                ?.replace('_', ' ')
+                ?.replace('-', ' ')
+                ?.trim()
+                .orEmpty()
+        }
+    }
+
+    private fun String.isUsefulFolderName(): Boolean =
+        isNotBlank() && !equals("Seraph", ignoreCase = true) && !equals("Music", ignoreCase = true)
+
     suspend fun apply(
         rows: List<AlbumPlanRow>,
         release: ReleaseDetail,
         folderName: String,
         doRename: Boolean,
         embedArt: Boolean,
+        onProgress: (completed: Int, total: Int, currentFile: String) -> Unit = { _, _, _ -> },
     ): AlbumApplyResult = withContext(Dispatchers.IO) {
         val errors = ArrayList<String>()
         val art = if (embedArt) {
@@ -171,7 +199,8 @@ class AlbumMatchService(
         var tagged = 0
         var failed = 0
         val taggedRows = ArrayList<AlbumPlanRow>()
-        for (row in rows) {
+        for ((index, row) in rows.withIndex()) {
+            onProgress(index, rows.size, row.file.displayName)
             val tags = if (art != null) row.tags.copy(artwork = art) else row.tags
             runCatching { tagging.write(row.file, tags) }
                 .onSuccess { updated ->
@@ -185,6 +214,7 @@ class AlbumMatchService(
                     failed++
                     errors += "${row.file.displayName}: ${e.message ?: e::class.java.simpleName}"
                 }
+            onProgress(index + 1, rows.size, row.file.displayName)
         }
         var renamed = 0
         if (doRename) {

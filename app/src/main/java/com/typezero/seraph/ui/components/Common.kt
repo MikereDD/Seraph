@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.BrokenImage
 import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -35,33 +36,44 @@ fun Artwork(bytes: ByteArray?, size: Dp, modifier: Modifier = Modifier) {
     val targetPx = with(LocalDensity.current) { size.roundToPx() }.coerceAtLeast(64)
     // Decode off the main thread and downsampled to the display size: a full-res
     // cover (often 1400px+) decoded at full size on the UI thread can OOM.
-    val bitmap by produceState<android.graphics.Bitmap?>(null, bytes, targetPx) {
-        value = if (bytes == null) null
-        else withContext(Dispatchers.Default) { decodeSampled(bytes, targetPx) }
+    val decode by produceState<ArtworkDecode>(ArtworkDecode.Loading, bytes, targetPx) {
+        value = when {
+            bytes == null -> ArtworkDecode.Missing
+            else -> withContext(Dispatchers.Default) {
+                decodeSampled(bytes, targetPx)?.let { ArtworkDecode.Ready(it) } ?: ArtworkDecode.Invalid
+            }
+        }
     }
     Surface(
         modifier = modifier.size(size).clip(shape),
         color = MaterialTheme.colorScheme.surfaceVariant,
         shape = shape,
     ) {
-        val bmp = bitmap
-        if (bmp != null) {
-            Image(
-                bitmap = bmp.asImageBitmap(),
+        when (val result = decode) {
+            is ArtworkDecode.Ready -> Image(
+                bitmap = result.bitmap.asImageBitmap(),
                 contentDescription = "Cover art",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize(),
             )
-        } else {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Icon(
-                    Icons.Rounded.MusicNote,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+            ArtworkDecode.Loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                androidx.compose.material3.CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
+            }
+            ArtworkDecode.Invalid -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Icon(Icons.Rounded.BrokenImage, contentDescription = "Artwork could not be decoded", tint = MaterialTheme.colorScheme.error)
+            }
+            ArtworkDecode.Missing -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Icon(Icons.Rounded.MusicNote, contentDescription = "No embedded artwork", tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
+}
+
+private sealed interface ArtworkDecode {
+    data object Loading : ArtworkDecode
+    data object Missing : ArtworkDecode
+    data object Invalid : ArtworkDecode
+    data class Ready(val bitmap: android.graphics.Bitmap) : ArtworkDecode
 }
 
 /** Two-pass decode: read bounds, pick an inSampleSize, then decode at ~targetPx. */

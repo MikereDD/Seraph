@@ -17,7 +17,15 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-enum class AlbumStage { Searching, Pick, Review, Applying }
+enum class AlbumStage { Searching, Pick, Review, Applying, Result }
+
+data class AlbumApplySummary(
+    val tagged: Int = 0,
+    val renamed: Int = 0,
+    val failed: Int = 0,
+    val artworkWrites: Int = 0,
+    val errors: List<String> = emptyList(),
+)
 
 data class AlbumPreviewSummary(
     val files: Int = 0,
@@ -40,6 +48,10 @@ data class AlbumUiState(
     val message: String? = null,
     val showApplyConfirm: Boolean = false,
     val preview: AlbumPreviewSummary = AlbumPreviewSummary(),
+    val progressCompleted: Int = 0,
+    val progressTotal: Int = 0,
+    val progressFile: String = "",
+    val result: AlbumApplySummary? = null,
 )
 
 class AlbumMatchViewModel(
@@ -59,16 +71,37 @@ class AlbumMatchViewModel(
 
     fun start(folderName: String, folderFiles: List<AudioFile>) {
         files = folderFiles
-        _state.value = AlbumUiState(folderName = folderName, query = folderName, busy = true)
-        search(folderName)
+        val displayFolder = folderName
+            .takeUnless { it.equals("Seraph", ignoreCase = true) }
+            ?.takeIf { it.isNotBlank() }
+            ?: folderFiles.map { it.parentName.trim() }
+                .firstOrNull { it.isNotBlank() && !it.equals("Seraph", ignoreCase = true) }
+                .orEmpty()
+        _state.value = AlbumUiState(folderName = displayFolder, busy = true, stage = AlbumStage.Searching)
+        viewModelScope.launch {
+            val suggested = runCatching { service.suggestQuery(folderFiles, displayFolder) }.getOrDefault("")
+            _state.update { it.copy(query = suggested) }
+            if (suggested.isBlank()) {
+                _state.update {
+                    it.copy(stage = AlbumStage.Pick, busy = false, message = "Enter an album or artist to search MusicBrainz.")
+                }
+            } else {
+                search(suggested)
+            }
+        }
     }
 
     fun onQueryChange(q: String) = _state.update { it.copy(query = q) }
 
     fun search(q: String = _state.value.query) {
-        _state.update { it.copy(stage = AlbumStage.Searching, busy = true, message = null) }
+        val clean = q.trim()
+        if (clean.isBlank()) {
+            _state.update { it.copy(stage = AlbumStage.Pick, busy = false, message = "Enter an album or artist to search MusicBrainz.") }
+            return
+        }
+        _state.update { it.copy(stage = AlbumStage.Searching, busy = true, message = null, query = clean) }
         viewModelScope.launch {
-            val results = runCatching { mb.searchReleases(q) }.getOrDefault(emptyList())
+            val results = runCatching { mb.searchReleases(clean) }.getOrDefault(emptyList())
             _state.update {
                 it.copy(
                     stage = AlbumStage.Pick,
@@ -146,27 +179,47 @@ class AlbumMatchViewModel(
         val st = _state.value
         val release = st.release ?: return
         if (st.rows.isEmpty()) return
-        _state.update { it.copy(stage = AlbumStage.Applying, busy = true, message = null, showApplyConfirm = false) }
+        _state.update {
+            it.copy(
+                stage = AlbumStage.Applying,
+                busy = true,
+                message = null,
+                showApplyConfirm = false,
+                progressCompleted = 0,
+                progressTotal = st.rows.size,
+                progressFile = "",
+                result = null,
+            )
+        }
         viewModelScope.launch {
             val res = runCatching {
-                service.apply(st.rows, release, st.folderName, st.rename, st.embedArt)
+                service.apply(st.rows, release, st.folderName, st.rename, st.embedArt) { completed, total, file ->
+                    _state.update { current ->
+                        current.copy(progressCompleted = completed, progressTotal = total, progressFile = file)
+                    }
+                }
             }.getOrElse { e ->
                 com.typezero.seraph.data.album.AlbumApplyResult(0, 0, st.rows.size, listOf(e.message ?: e::class.java.simpleName))
             }
-            if (res.failed == 0) {
-                _applied.send(Unit)
-            } else {
-                _state.update {
-                    it.copy(
-                        stage = AlbumStage.Review,
-                        busy = false,
-                        message = buildString {
-                            append("Tagged ${res.tagged}, renamed ${res.renamed}, ${res.failed} failed.")
-                            res.errors.firstOrNull()?.let { append("\n").append(it) }
-                        },
-                    )
-                }
+            _state.update {
+                it.copy(
+                    stage = AlbumStage.Result,
+                    busy = false,
+                    progressCompleted = st.rows.size,
+                    result = AlbumApplySummary(
+                        tagged = res.tagged,
+                        renamed = res.renamed,
+                        failed = res.failed,
+                        artworkWrites = if (st.embedArt) res.tagged else 0,
+                        errors = res.errors,
+                    ),
+                )
             }
         }
     }
+
+    fun finishResult() {
+        viewModelScope.launch { _applied.send(Unit) }
+    }
+
 }

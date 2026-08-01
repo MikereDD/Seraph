@@ -4,7 +4,7 @@
 
 <h1 align="center">Seraph</h1>
 
-<p align="center"><strong>v0.4.3-dev.1 source · latest bundled APK v0.4.2</strong></p>
+<p align="center"><strong>v0.4.3-dev.5 source · latest bundled APK v0.4.2 (release artifact; development source is newer)</strong></p>
 
 <p align="center">
 A <strong>Material 3 + Jetpack Compose</strong> audio <strong>tagger</strong> for Android — the tagging
@@ -20,6 +20,14 @@ folders from a template.
 ---
 
 ## Install
+
+## Current development build
+
+- Source: **v0.4.3-dev.5** (`versionCode 50`)
+- Premium Library, Tag Editor, and Album Match visual passes are implemented.
+- Album Match now derives searches from file metadata instead of the app name, shows live apply progress, and presents a persistent completion summary.
+- Tag Editor distinguishes missing, loading, and unreadable embedded artwork.
+
 
 1. Download **[Seraph-v0.4.2.apk](https://github.com/MikereDD/It-Works-On-My-Machine/raw/main/Android/Seraph/releases/Seraph-v0.4.2.apk)** and copy it to your phone.
 2. Open it with a file manager and install. You'll see Google **Play Protect**'s "unknown developer" notice — tap **More details -> Install anyway**. That's expected for a sideloaded personal build.

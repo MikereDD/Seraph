@@ -76,6 +76,7 @@ fun AlbumMatchScreen(
     onConfirmApply: () -> Unit,
     onCancelApply: () -> Unit,
     onBackToPick: () -> Unit,
+    onFinishResult: () -> Unit,
     onBack: () -> Unit,
 ) {
     if (state.showApplyConfirm) {
@@ -117,7 +118,8 @@ fun AlbumMatchScreen(
         ) {
             when (state.stage) {
                 AlbumStage.Searching -> Busy("Searching MusicBrainz…")
-                AlbumStage.Applying -> Busy("Applying tags safely…")
+                AlbumStage.Applying -> ApplyingStage(state)
+                AlbumStage.Result -> ResultStage(state, onFinishResult)
                 AlbumStage.Pick -> PickStage(state, onQueryChange, onSearch, onPick)
                 AlbumStage.Review -> ReviewStage(
                     state,
@@ -128,6 +130,92 @@ fun AlbumMatchScreen(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun ApplyingStage(state: AlbumUiState) {
+    val total = state.progressTotal.coerceAtLeast(1)
+    val progress = state.progressCompleted.toFloat() / total.toFloat()
+    Column(
+        Modifier.fillMaxSize().padding(24.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        CircularProgressIndicator(progress = { progress }, color = Teal, strokeWidth = 5.dp, modifier = Modifier.size(72.dp))
+        Spacer(Modifier.height(20.dp))
+        Text("Applying metadata", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        Text(
+            "${state.progressCompleted} of ${state.progressTotal} files complete",
+            color = Teal,
+            fontWeight = FontWeight.SemiBold,
+        )
+        if (state.progressFile.isNotBlank()) {
+            Text(
+                state.progressFile,
+                modifier = Modifier.padding(top = 8.dp),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ResultStage(state: AlbumUiState, onFinish: () -> Unit) {
+    val result = state.result ?: return
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(20.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        item {
+            Surface(
+                shape = MaterialTheme.shapes.large,
+                color = if (result.failed == 0) Teal.copy(alpha = 0.10f) else MaterialTheme.colorScheme.error.copy(alpha = 0.10f),
+                border = BorderStroke(1.dp, if (result.failed == 0) Teal else MaterialTheme.colorScheme.error),
+            ) {
+                Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = if (result.failed == 0) Teal else MaterialTheme.colorScheme.error)
+                    Text(
+                        if (result.failed == 0) "Album tagging complete" else "Album tagging completed with issues",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(if (result.failed == 0) "All planned changes were verified." else "Review the failures below before trying again.")
+                }
+            }
+        }
+        item {
+            Surface(shape = MaterialTheme.shapes.large, color = Graphite900, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
+                Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    ResultRow("Files tagged", result.tagged.toString())
+                    ResultRow("Artwork writes", result.artworkWrites.toString())
+                    ResultRow("Files renamed", result.renamed.toString())
+                    ResultRow("Failed", result.failed.toString())
+                }
+            }
+        }
+        if (result.errors.isNotEmpty()) {
+            item { Text("DETAILS", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold) }
+            items(result.errors) { error ->
+                Text(error, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+        item {
+            Button(onClick = onFinish, modifier = Modifier.fillMaxWidth().height(54.dp), colors = ButtonDefaults.buttonColors(containerColor = Teal, contentColor = Ink)) {
+                Text("Return to library", fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ResultRow(label: String, value: String) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(value, fontWeight = FontWeight.Bold)
     }
 }
 
