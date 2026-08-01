@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Album
@@ -29,19 +31,23 @@ import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.PhoneAndroid
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -65,11 +71,26 @@ fun LibraryScreen(
     onClearSelection: () -> Unit,
     onAbout: () -> Unit,
 ) {
+    val barColors = TopAppBarDefaults.topAppBarColors(
+        containerColor = MaterialTheme.colorScheme.background,
+        scrolledContainerColor = MaterialTheme.colorScheme.surface,
+    )
+
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             if (state.selectionMode) {
                 TopAppBar(
-                    title = { Text("${state.selection.size} selected") },
+                    title = {
+                        Column {
+                            Text("${state.selection.size} selected")
+                            Text(
+                                "Choose a batch action",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    },
                     navigationIcon = {
                         IconButton(onClick = onClearSelection) {
                             Icon(Icons.Rounded.Close, contentDescription = "Clear selection")
@@ -86,10 +107,20 @@ fun LibraryScreen(
                             Icon(Icons.Rounded.DriveFileRenameOutline, contentDescription = "Rename selected")
                         }
                     },
+                    colors = barColors,
                 )
             } else {
                 TopAppBar(
-                    title = { Text(state.currentName, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                    title = {
+                        Column {
+                            Text(state.currentName, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(
+                                "Audio library",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    },
                     navigationIcon = {
                         if (!state.atRoot) {
                             IconButton(onClick = onUp) {
@@ -110,48 +141,79 @@ fun LibraryScreen(
                             Icon(Icons.Rounded.Info, contentDescription = "About")
                         }
                     },
+                    colors = barColors,
                 )
             }
         },
     ) { pad ->
         Column(Modifier.fillMaxSize().padding(pad)) {
+            Text(
+                "SOURCE",
+                modifier = Modifier.padding(start = 20.dp, top = 12.dp, bottom = 8.dp),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
             Row(
-                Modifier.fillMaxWidth().padding(16.dp, 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                FilterChip(
+                SourceCard(
+                    title = "Device",
+                    subtitle = "Local folder",
                     selected = state.activeSourceId == StorageSource.DEVICE,
+                    icon = { Icon(Icons.Rounded.PhoneAndroid, null) },
                     onClick = onPickDevice,
-                    label = { Text("Device") },
-                    leadingIcon = { Icon(Icons.Rounded.PhoneAndroid, null, Modifier.size(18.dp)) },
+                    modifier = Modifier.weight(1f),
                 )
-                FilterChip(
+                SourceCard(
+                    title = "pCloud",
+                    subtitle = "Cloud library",
                     selected = state.activeSourceId == StorageSource.PCLOUD,
+                    icon = { Icon(Icons.Rounded.Cloud, null) },
                     onClick = onSelectPCloud,
-                    label = { Text("pCloud") },
-                    leadingIcon = { Icon(Icons.Rounded.Cloud, null, Modifier.size(18.dp)) },
+                    modifier = Modifier.weight(1f),
                 )
             }
-            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+            Spacer(Modifier.height(14.dp))
 
             when {
                 state.isLoading -> Centered { CircularProgressIndicator() }
                 !state.hasSource -> Centered {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Choose a source to begin.", style = MaterialTheme.typography.bodyMedium)
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            "Device picks a folder; pCloud signs in and lists /Music and /Books/Audiobooks.",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Column(Modifier.padding(22.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Surface(
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                            ) {
+                                Icon(
+                                    Icons.Rounded.MusicNote,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(14.dp).size(28.dp),
+                                )
+                            }
+                            Spacer(Modifier.height(14.dp))
+                            Text("Choose where your music lives", style = MaterialTheme.typography.titleMedium)
+                            Spacer(Modifier.height(5.dp))
+                            Text(
+                                "Select a device folder or connect pCloud to begin browsing and editing tags.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     }
                 }
-                else -> LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(vertical = 8.dp)) {
+                else -> LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
                     state.error?.let { item { Notice(it) } }
                     items(state.folders, key = { "d:" + it.id }) { folder ->
                         FolderRow(folder.name, onClick = { onOpenFolder(folder) })
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
                     }
                     items(state.files, key = { "f:" + it.id }) { file ->
                         FileRow(
@@ -161,7 +223,6 @@ fun LibraryScreen(
                             onOpen = { onOpen(file) },
                             onToggle = { onToggleSelect(file) },
                         )
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
                     }
                 }
             }
@@ -170,15 +231,74 @@ fun LibraryScreen(
 }
 
 @Composable
-private fun FolderRow(name: String, onClick: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(16.dp, 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+private fun SourceCard(
+    title: String,
+    subtitle: String,
+    selected: Boolean,
+    icon: @Composable () -> Unit,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        modifier = modifier.clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(
+            containerColor = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+        ),
+        border = BorderStroke(
+            1.dp,
+            if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.65f)
+            else MaterialTheme.colorScheme.outlineVariant,
+        ),
     ) {
-        Icon(Icons.Rounded.Folder, null, tint = MaterialTheme.colorScheme.secondary)
-        Text(name, Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.titleMedium)
-        Icon(Icons.Rounded.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Row(
+            Modifier.fillMaxWidth().padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(11.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(38.dp)
+                    .clip(CircleShape)
+                    .background(
+                        if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
+                        else MaterialTheme.colorScheme.surfaceContainerHighest
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                androidx.compose.runtime.CompositionLocalProvider(
+                    androidx.compose.material3.LocalContentColor provides if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                ) { icon() }
+            }
+            Column {
+                Text(title, style = MaterialTheme.typography.titleSmall)
+                Text(subtitle, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    }
+}
+
+@Composable
+private fun FolderRow(name: String, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Surface(shape = CircleShape, color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.12f)) {
+                Icon(
+                    Icons.Rounded.Folder,
+                    null,
+                    tint = MaterialTheme.colorScheme.secondary,
+                    modifier = Modifier.padding(10.dp).size(20.dp),
+                )
+            }
+            Text(name, Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.titleMedium)
+            Icon(Icons.Rounded.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
     }
 }
 
@@ -191,44 +311,57 @@ private fun FileRow(
     onOpen: () -> Unit,
     onToggle: () -> Unit,
 ) {
-    Row(
+    Card(
         modifier = Modifier
             .fillMaxWidth()
             .combinedClickable(
                 onClick = { if (selectionMode) onToggle() else onOpen() },
                 onLongClick = onToggle,
-            )
-            .background(
-                if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else Color.Transparent
-            )
-            .padding(16.dp, 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ),
+        colors = CardDefaults.cardColors(
+            containerColor = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+        ),
     ) {
-        Icon(
-            if (selected) Icons.Rounded.CheckCircle else Icons.Rounded.MusicNote,
-            contentDescription = if (selected) "Selected" else null,
-            tint = MaterialTheme.colorScheme.primary,
-        )
-        Column(Modifier.weight(1f)) {
-            Text(file.displayName, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.titleMedium)
-            Text(
-                "${file.extension.uppercase()} · ${humanSize(file.sizeBytes)}",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Surface(
+                shape = CircleShape,
+                color = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
+                else MaterialTheme.colorScheme.surfaceContainerHighest,
+            ) {
+                Icon(
+                    if (selected) Icons.Rounded.CheckCircle else Icons.Rounded.MusicNote,
+                    contentDescription = if (selected) "Selected" else null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(10.dp).size(20.dp),
+                )
+            }
+            Column(Modifier.weight(1f)) {
+                Text(file.displayName, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(3.dp))
+                Text(
+                    "${file.extension.uppercase()} · ${humanSize(file.sizeBytes)}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }
 
 @Composable
 private fun Notice(text: String) {
-    Text(
-        text,
-        modifier = Modifier.fillMaxWidth().padding(16.dp, 8.dp),
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.tertiary,
-    )
+    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.12f))) {
+        Text(
+            text,
+            modifier = Modifier.fillMaxWidth().padding(14.dp),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.tertiary,
+        )
+    }
 }
 
 @Composable

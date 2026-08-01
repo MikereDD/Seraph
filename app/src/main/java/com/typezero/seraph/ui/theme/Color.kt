@@ -2,13 +2,18 @@ package com.typezero.seraph.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Pulled from the launcher art: deep slate base, teal + violet accents.
-val Teal       = Color(0xFF22D3BC)
-val Violet     = Color(0xFF8B7CF6)
-val Slate900   = Color(0xFF0E1116)
-val Slate850   = Color(0xFF141922)
-val Slate800   = Color(0xFF1B2230)
-val Slate700   = Color(0xFF263042)
-val SlateText  = Color(0xFFE6EAF2)
-val SlateMuted = Color(0xFF93A0B4)
-val Amber      = Color(0xFFE2B340)
+// Seraph's premium dark palette: near-black canvas, layered graphite surfaces,
+// and restrained teal/violet accents pulled from the launcher artwork.
+val Teal = Color(0xFF42E4CE)
+val TealDeep = Color(0xFF0C8F83)
+val Violet = Color(0xFFA99BFF)
+val Amber = Color(0xFFFFC857)
+
+val Ink = Color(0xFF080A0F)
+val Graphite950 = Color(0xFF0C0F15)
+val Graphite900 = Color(0xFF11151D)
+val Graphite850 = Color(0xFF171C26)
+val Graphite800 = Color(0xFF1D2430)
+val Graphite700 = Color(0xFF303A4B)
+val Frost = Color(0xFFF2F5FA)
+val Mist = Color(0xFFA7B1C2)

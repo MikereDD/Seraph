@@ -8,3 +8,6 @@
 /captures
 .externalNativeBuild
 .cxx
+
+# Generated release manifest (publish intentionally)
+# update-manifest.json

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.3-dev.1
+
+- Corrected Android `versionCode` to 46 so this development build upgrades cleanly from the existing versionCode 45 installation.
+- Began the premium visual refresh with a deeper graphite theme, stronger typography, refined shapes, elevated source selectors, and card-based library rows.
+- Added the updater foundation and initial audit fixes.
+
 All notable changes to Seraph are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -110,3 +116,13 @@ Android, the tagging companion to the video-to-audio extractor.
 [0.4.0]: https://github.com/MikereDD/It-Works-On-My-Machine/compare/seraph-v0.3.0...seraph-v0.4.0
 [0.3.0]: https://github.com/MikereDD/It-Works-On-My-Machine/compare/seraph-v0.1.0...seraph-v0.3.0
 [0.1.0]: https://github.com/MikereDD/It-Works-On-My-Machine/releases/tag/seraph-v0.1.0
+
+## 0.4.3
+
+- Added a manual in-app updater entry point in About.
+- Update downloads require HTTPS from an approved GitHub host.
+- Downloaded APKs are verified against the published SHA-256.
+- Update package name and signing certificate must match the installed Seraph app before installation.
+- Added a scoped FileProvider for installer handoff.
+- Aligned source version metadata at 0.4.3.
+- Added an example update manifest for release publishing.

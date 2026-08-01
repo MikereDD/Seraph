@@ -30,6 +30,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -49,6 +50,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import java.io.File
+import com.typezero.seraph.update.UpdateManager
+import kotlinx.coroutines.launch
 
 private const val REPO_URL = "https://github.com/MikereDD/It-Works-On-My-Machine/tree/main/Android/Seraph"
 
@@ -63,12 +66,17 @@ fun AboutScreen(
     val uriHandler = LocalUriHandler.current
     val clipboard = LocalClipboardManager.current
     val crashFile = remember { File(context.filesDir, SeraphApp.CRASH_FILE) }
+    val updater = remember { UpdateManager(context.applicationContext) }
+    val scope = rememberCoroutineScope()
+    var updateStatus by remember { mutableStateOf<String?>(null) }
+    var pendingRelease by remember { mutableStateOf<UpdateManager.Release?>(null) }
+    var updateBusy by remember { mutableStateOf(false) }
     var crashLog by remember {
         mutableStateOf(runCatching { if (crashFile.exists()) crashFile.readText() else null }.getOrNull())
     }
     val version = remember {
         runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }
-            .getOrNull() ?: "0.4.0"
+            .getOrNull() ?: "unknown"
     }
 
     Scaffold(
@@ -113,6 +121,66 @@ fun AboutScreen(
             )
 
             Spacer(Modifier.height(24.dp))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+            Spacer(Modifier.height(8.dp))
+
+            SectionLabel("Updates")
+            val release = pendingRelease
+            OutlinedButton(
+                enabled = !updateBusy,
+                onClick = {
+                    scope.launch {
+                        updateBusy = true
+                        updateStatus = if (release == null) "Checking for updates…" else "Downloading and verifying…"
+                        runCatching {
+                            if (release == null) {
+                                when (val result = updater.check()) {
+                                    is UpdateManager.CheckResult.Available -> {
+                                        pendingRelease = result.release
+                                        updateStatus = "Seraph ${result.release.versionName} is available."
+                                    }
+                                    is UpdateManager.CheckResult.Current -> {
+                                        updateStatus = "Seraph ${result.versionName} is current."
+                                    }
+                                }
+                            } else {
+                                val apk = updater.downloadAndVerify(release)
+                                updateStatus = "Verified. Opening Android installer…"
+                                updater.launchInstaller(apk)
+                            }
+                        }.onFailure { updateStatus = it.message ?: "Update failed" }
+                        updateBusy = false
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    when {
+                        updateBusy -> "Working…"
+                        release != null -> "Download and install ${release.versionName}"
+                        else -> "Check for updates"
+                    }
+                )
+            }
+            updateStatus?.let {
+                Text(
+                    it,
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
+            }
+            release?.notes?.takeIf { it.isNotBlank() }?.let {
+                Text(
+                    it,
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            Spacer(Modifier.height(16.dp))
             HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
             Spacer(Modifier.height(8.dp))
 
