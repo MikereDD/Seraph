@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.4.3-dev.2 - Premium Library foundation
+
+- Rebuild the Library screen around the approved premium Seraph mockup.
+- Add layered graphite surfaces with restrained teal and violet accents.
+- Add polished device and pCloud source cards with connected/selected states.
+- Add compact source breadcrumbs and two-column folder cards.
+- Redesign music rows with premium selection states and metadata hierarchy.
+- Move batch actions into a persistent bottom selection bar.
+- Improve loading, empty-library, section, and notice presentation.
+- Bump Android version code to 47 for safe in-place development upgrades.
+
 ## 0.4.3-dev.1
 
 - Corrected Android `versionCode` to 46 so this development build upgrades cleanly from the existing versionCode 45 installation.
