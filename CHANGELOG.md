@@ -166,7 +166,5 @@ Android, the tagging companion to the video-to-audio extractor.
   token is in plain `SharedPreferences` (swap to `EncryptedSharedPreferences`).
 - Undo is not implemented yet. v0.4.0 adds preview/confirm first so album changes are safer before they are applied.
 
-[Unreleased]: https://github.com/MikereDD/Seraph/compare/seraph-v0.4.0...HEAD
-[0.4.0]: https://github.com/MikereDD/Seraph/compare/seraph-v0.3.0...seraph-v0.4.0
-[0.3.0]: https://github.com/MikereDD/Seraph/compare/seraph-v0.1.0...seraph-v0.3.0
+
 [0.1.0]: https://github.com/MikereDD/Seraph/releases/tag/seraph-v0.1.0
