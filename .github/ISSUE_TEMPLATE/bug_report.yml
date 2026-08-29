@@ -1,0 +1,51 @@
+name: Bug report
+description: Report a reproducible Seraph problem
+title: "[Bug] "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: "Thanks for helping improve Seraph. Never include passwords, pCloud tokens, signing material, or private library information."
+  - type: input
+    id: version
+    attributes:
+      label: Seraph version
+      placeholder: e.g. 0.4.3-dev.6
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device and Android version
+      placeholder: e.g. Pixel 10 Pro XL, Android 16
+    validations:
+      required: true
+  - type: dropdown
+    id: source
+    attributes:
+      label: Storage source
+      options:
+        - Device / SAF
+        - pCloud
+        - Not storage-related
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      description: Explain the smallest reliable sequence that triggers the problem.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true

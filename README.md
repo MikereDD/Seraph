@@ -1,75 +1,165 @@
 <p align="center">
-  <img src="docs/icon.png" width="112" alt="Seraph icon">
+  <img src="docs/icon.png" width="132" alt="Seraph" />
 </p>
 
 <h1 align="center">Seraph</h1>
 
-<p align="center"><strong>v0.4.3-dev.5 source · latest bundled APK v0.4.2 (release artifact; development source is newer)</strong></p>
-
 <p align="center">
-A <strong>Material 3 + Jetpack Compose</strong> audio <strong>tagger</strong> for Android — the tagging
-companion to the video-to-audio extractor. Browse your music on your <strong>device or pCloud</strong>,
-edit tags and embedded cover art, auto-fill from <strong>MusicBrainz</strong>, and batch-rename whole
-folders from a template.
+  <strong>A premium music tag editor and library workflow for Android.</strong><br />
+  Browse, identify, retag, add artwork, and safely rename music on-device or in pCloud.
 </p>
 
 <p align="center">
-  <a href="https://github.com/MikereDD/It-Works-On-My-Machine/raw/main/Android/Seraph/releases/Seraph-v0.4.2.apk"><strong>Download the APK (v0.4.2)</strong></a>
+  <img alt="Android 8+" src="https://img.shields.io/badge/Android-8.0%2B-3DDC84?logo=android&logoColor=white" />
+  <img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-2.0.21-7F52FF?logo=kotlin&logoColor=white" />
+  <img alt="Jetpack Compose" src="https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4" />
+  <img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-blue" />
+</p>
+
+<p align="center">
+  <a href="CHANGELOG.md">Changelog</a> ·
+  <a href="docs/RELEASING.md">Release process</a> ·
+  <a href="SECURITY.md">Security</a> ·
+  <a href="CONTRIBUTING.md">Contributing</a>
 </p>
 
 ---
 
-## Install
+## What is Seraph?
 
-## Current development build
+Seraph is an Android music-library tool built around a simple idea: metadata
+maintenance should be fast enough for one track and safe enough for an entire
+album.
 
-- Source: **v0.4.3-dev.5** (`versionCode 50`)
-- Premium Library, Tag Editor, and Album Match visual passes are implemented.
-- Album Match now derives searches from file metadata instead of the app name, shows live apply progress, and presents a persistent completion summary.
-- Tag Editor distinguishes missing, loading, and unreadable embedded artwork.
+It can work with music selected through Android's Storage Access Framework or
+with a pCloud library, read and write common audio tags, retrieve metadata from
+MusicBrainz, fetch cover art through the Cover Art Archive, preview album-wide
+changes before applying them, and optionally rename files using a predictable
+template.
 
+The current premium interface uses a graphite foundation with restrained teal
+and violet accents across the Library, Tag Editor, and Album Match workflows.
 
-1. Download **[Seraph-v0.4.2.apk](https://github.com/MikereDD/It-Works-On-My-Machine/raw/main/Android/Seraph/releases/Seraph-v0.4.2.apk)** and copy it to your phone.
-2. Open it with a file manager and install. You'll see Google **Play Protect**'s "unknown developer" notice — tap **More details -> Install anyway**. That's expected for a sideloaded personal build.
-3. Launch **Seraph**, then pick a source: **Device** to choose a folder, or **pCloud** to sign in (Google sign-in and two-factor are handled on pCloud's own page).
+## Core principles
 
----
+- **Preview before destructive work** — album tagging and renaming expose the planned changes first.
+- **Metadata and filenames are separate decisions** — album matching defaults to tag writes only; renaming is opt-in.
+- **Verify important writes** — artwork and remote replacements are checked before success is reported.
+- **Keep source choices explicit** — Device and pCloud remain distinct, visible library sources.
+- **No password collection** — pCloud authentication occurs through pCloud's own web login; Seraph stores the resulting token, not the password.
 
 ## Features
 
-- **Two sources, one app** — device (**Storage Access Framework**, persisted read/write) and **pCloud** (HTTP API), switchable from the library.
-- **Browse by directory** — drill into albums, **Back** or the up arrow climbs out. pCloud is scoped to just `/Music` and `/Books/Audiobooks` (edit `PCloudConfig.SCAN_PATHS`).
-- **Read & write tags** for MP3, FLAC, M4A/MP4, Ogg, Opus, WAV, AAC, WMA via **jaudiotagger**, including embedded front-cover art.
-- **MusicBrainz lookup** + Cover Art Archive covers — suggestions fill the fields, but **every value stays hand-editable**.
-- **Album match** — point a whole folder (or a multi-selected subset) at a MusicBrainz release; Seraph matches each file to a track by **title**, shows a **dry-run preview**, then writes tags, embeds the cover, and optionally renames in one safe pass, on device or pCloud.
-- **Multi-select** — long-press a track to start selecting, tap to add more, select-all for the folder; album-match and rename then act on just the selection.
-- **Safe apply preview** — album matching shows the release, planned tag writes, artwork writes, and optional renames before anything is written.
-- **Per-folder batch rename** from a token template (`{track} of {total} - {artist} - {title}` …), with a live preview and Android/Windows-safe names.
-- **pCloud sign-in via pCloud's own web login** (**2FA supported**) — only the resulting token is stored, never your password.
+### Library
 
-See the **[changelog](https://github.com/MikereDD/It-Works-On-My-Machine/blob/main/Android/Seraph/CHANGELOG.md)** for the full, version-by-version history.
+- Device access through Android's Storage Access Framework with persisted read/write permission
+- pCloud browsing through the pCloud HTTP API
+- directory-first music browsing
+- multi-select with folder-level batch actions
+- premium folder and track cards with clear selected states
 
----
+### Tag Editor
 
-## How pCloud sign-in works
+Seraph reads and writes metadata for formats supported by its jaudiotagger-based
+workflow, including MP3, FLAC, M4A/MP4, Ogg, Opus, WAV, AAC, and WMA where the
+underlying format permits the requested operation.
 
-pCloud has **disabled new OAuth app registration**, and its API does **not** support password login on accounts with **two-factor authentication**. So Seraph signs in the same way the **pCloud TV** app does — through pCloud's own web login:
+The editor supports:
 
-1. Tap the **pCloud** chip — Seraph opens **my.pcloud.com** in an in-app WebView.
-2. Log in with your email + password + 2FA, or Google — all handled by pCloud.
-3. Seraph captures the account's **auth token** from the authenticated session, validates it against both regions (US `api.pcloud.com` / EU `eapi.pcloud.com`), stores it, and lists your folders.
+- title, artist, album, album artist, track, disc, year, genre, and comments
+- embedded front-cover artwork
+- MusicBrainz lookup while keeping every field manually editable
+- explicit loading, missing-artwork, unreadable-artwork, and valid-artwork states
+- post-write artwork verification
 
-Your **password is never seen or stored** — only the token, kept until you sign out.
+### Album Match
 
----
+Album Match searches MusicBrainz for a release, maps selected files to tracks,
+and builds a dry-run plan before modifying anything.
+
+- query derivation from existing metadata, parent folder, and filename clues
+- recommended and alternate release results
+- per-track matching plan
+- planned tag-write and artwork-write counts
+- optional file renaming
+- live apply progress
+- persistent completion summary with successes and failures
+
+### Safe rename workflow
+
+Per-folder rename operations use a token template such as:
+
+```text
+{track} of {total} - {artist} - {title}
+```
+
+Seraph shows the proposed names first and sanitizes them for common Android and
+Windows filesystem restrictions.
+
+### pCloud
+
+pCloud authentication is performed on pCloud's own web login page, including
+supported two-factor or federated-login flows. Seraph captures the authenticated
+session token, validates the account region, and uses that token for API calls.
+
+The password itself is not collected or stored by Seraph.
+
+### Secure updater
+
+Seraph includes a user-initiated sideload updater. Before Android is allowed to
+install an update, Seraph verifies:
+
+- HTTPS-only release URLs from approved hosts
+- SHA-256 of the downloaded APK
+- expected package name (`com.typezero.seraph`)
+- signing-certificate match with the currently installed Seraph build
+
+There are no silent updates and no automatic downgrades.
+
+## Project status
+
+**Current development source:** `0.4.3-dev.6` (`versionCode 51`)
+
+The premium Library, Tag Editor, and Album Match passes are implemented. Recent
+work corrected album-query derivation, improved artwork diagnostics and
+verification, and added visible apply progress plus persistent completion
+results. The project is now being prepared for standalone releases and continued
+real-device testing.
+
+## Releases
+
+Release APKs are intentionally **not stored in Git**. Signed builds belong in the
+matching GitHub Release as release assets, while the updater manifest remains in
+source control.
+
+This README intentionally contains no direct APK download link. See
+[`docs/RELEASING.md`](docs/RELEASING.md) for the release workflow.
 
 ## Build from source
 
-1. Open the **Seraph** folder in **Android Studio** (Ladybug or newer): *File -> Open* -> select the folder containing `settings.gradle.kts`.
-2. Let Gradle **sync** (the first sync downloads Gradle 8.9 + dependencies).
-3. **Build -> Build APK(s)** -> output at `app/build/outputs/apk/debug/app-debug.apk`. For a release build, run `./gradlew :app:assembleRelease`.
+### Requirements
 
-> No native libraries — Seraph is pure Kotlin/Java (tagging via the jaudiotagger Android fork), so the APK is small and architecture-independent.
+- JDK 17
+- Android SDK 35
+- Gradle 8.9
+- Android Gradle Plugin 8.7.2
+- Kotlin 2.0.21
+
+With Gradle 8.9 installed locally:
+
+```bash
+gradle :app:assembleDebug
+```
+
+A local wrapper can also be generated if desired:
+
+```bash
+gradle wrapper --gradle-version 8.9
+./gradlew :app:assembleDebug
+```
+
+The generated Gradle wrapper binaries are not required to live in this
+repository.
 
 ### Toolchain
 
@@ -79,47 +169,90 @@ Your **password is never seen or stored** — only the token, kept until you sig
 | Android Gradle Plugin | 8.7.2 |
 | Kotlin | 2.0.21 |
 | Compose BOM | 2024.10.01 |
-| Audio tags (`com.github.Adonai:jaudiotagger`) | 2.3.15 |
+| jaudiotagger Android fork | 2.3.15 |
 | min / target SDK | 26 / 35 |
-| JDK (Gradle) | 17 |
-
----
+| JDK | 17 |
 
 ## Project layout
 
-```
+```text
 app/src/main/java/com/typezero/seraph/
-├─ SeraphApp.kt              # Application; builds the manual-DI container
-├─ MainActivity.kt           # Compose host + state-based navigation
-├─ di/                       # AppContainer, ViewModelFactory (manual DI, no Hilt)
+├─ SeraphApp.kt
+├─ MainActivity.kt
+├─ di/                       # manual application wiring
 ├─ data/
-│  ├─ model/                 # AudioFile, Tags, MusicBrainzResult
-│  ├─ tagging/               # Tagger (jaudiotagger), TagFileService
-│  ├─ musicbrainz/           # MusicBrainzClient (search + Cover Art Archive)
-│  └─ rename/                # FilenameTemplate, RenameService
-├─ storage/                  # StorageSource abstraction, SafStorageSource, SourceManager
-├─ pcloud/                   # PCloudClient, PCloudSession, PCloudStorageSource, PCloudConfig
+│  ├─ model/                 # audio and metadata models
+│  ├─ tagging/               # tag reads/writes + verification
+│  ├─ musicbrainz/           # MusicBrainz + Cover Art Archive
+│  └─ rename/                # filename templates + safe rename planning
+├─ storage/                  # storage abstraction + SAF implementation
+├─ pcloud/                   # pCloud session/client/storage implementation
 └─ ui/
-   ├─ library/               # browse folders + files, source switch
-   ├─ editor/                # tag editor + MusicBrainz lookup
-   ├─ rename/                # per-folder batch rename (live preview)
-   ├─ login/                 # PCloudWebLogin — pCloud web login in a WebView
-   ├─ components/            # shared composables
-   └─ theme/                 # palette + design tokens
+   ├─ library/
+   ├─ editor/
+   ├─ albummatch/
+   ├─ rename/
+   ├─ login/
+   ├─ about/
+   ├─ components/
+   └─ theme/
 ```
 
----
+## Storage notes
 
-## Notes
+jaudiotagger requires a real local file. Seraph therefore stages metadata edits
+through an app cache file before writing the result back to SAF or pCloud.
+Remote replacements are verified before being reported as successful.
 
-- jaudiotagger needs a real file, so every edit routes through a local cache file: a `ContentResolver` read/write for SAF, a download + re-upload for pCloud. Renames are native — a `DocumentsContract` call for SAF, a single server-side `renamefile` for pCloud.
-- Album Match defaults to **write tags only**. File renaming is a separate switch so metadata tagging does not surprise you by changing filenames.
-- pCloud tag writes replace the original remote file instead of leaving duplicate uploaded copies.
-- The pCloud token lives in plain app-private prefs. For encryption, wrap `PCloudSession` with `EncryptedSharedPreferences` (`androidx.security:security-crypto`).
-- Which folders Seraph touches is set in one place — `PCloudConfig.SCAN_PATHS`.
+The pCloud authentication token is application-private data and should never be
+included in bug reports, screenshots, logs, backups shared with others, or
+repository files.
 
----
+## Release and update model
+
+The production updater manifest lives at:
+
+```text
+releases/update.json
+```
+
+The example schema is in [`releases/update.example.json`](releases/update.example.json).
+A real release manifest points at a signed APK attached to the corresponding
+GitHub Release and records that APK's SHA-256. Release APK binaries themselves
+remain outside Git history.
+
+See [`docs/RELEASING.md`](docs/RELEASING.md) for the complete release workflow.
+
+## Repository history
+
+Seraph began inside the `It-Works-On-My-Machine` monorepository. Its
+application-specific history was extracted into this standalone repository with
+`git filter-repo`, preserving relevant development history while removing
+unrelated monorepo tags and historical APK binaries.
+
+See [`docs/MONOREPO-MIGRATION.md`](docs/MONOREPO-MIGRATION.md).
+
+## Contributing and security
+
+Seraph is primarily a personal project, but focused bug reports and sensible
+pull requests are welcome. See [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
+For vulnerabilities or security-sensitive reports, follow [`SECURITY.md`](SECURITY.md).
+Never include pCloud tokens, passwords, or private library information in a
+public report.
 
 ## License
 
-Personal project — do whatever you want with it.
+Seraph's original source is licensed under the **Apache License 2.0**.
+Third-party components, services, metadata, and artwork retain their own
+licenses, notices, and rights.
+
+See [`LICENSE`](LICENSE), [`NOTICE`](NOTICE), and
+[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
+
+---
+
+<p align="center">
+  <strong>Seraph</strong><br />
+  Built by Typezer∅
+</p>

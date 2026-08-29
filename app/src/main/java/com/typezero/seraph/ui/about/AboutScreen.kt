@@ -53,7 +53,7 @@ import java.io.File
 import com.typezero.seraph.update.UpdateManager
 import kotlinx.coroutines.launch
 
-private const val REPO_URL = "https://github.com/MikereDD/It-Works-On-My-Machine/tree/main/Android/Seraph"
+private const val REPO_URL = "https://github.com/MikereDD/Seraph"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -248,7 +248,7 @@ fun AboutScreen(
             }
 
             Text(
-                "Personal project — do whatever you want with it.",
+                "Licensed under Apache License 2.0. Third-party components retain their own licenses.",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,

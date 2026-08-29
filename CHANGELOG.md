@@ -4,6 +4,20 @@ All notable changes to Seraph are documented here.
 
 ## [Unreleased]
 
+## [0.4.3-dev.6] - 2026-08-28
+
+### Changed
+- Prepared Seraph for its standalone GitHub repository following the proven Resound repository/release structure.
+- Rebuilt the README around the app, current workflows, source builds, release model, and project history; removed obsolete direct APK download links.
+- Replaced the informal license statement with Apache License 2.0 and added project/third-party notices.
+- Moved updater documentation and manifest examples under the canonical `releases/` layout.
+- Updated About, MusicBrainz, updater, and changelog references from the former monorepo to `MikereDD/Seraph`.
+
+### Added
+- `LICENSE`, `NOTICE`, `THIRD_PARTY_NOTICES.md`, `SECURITY.md`, and `CONTRIBUTING.md`.
+- Standalone release and monorepo-migration documentation.
+
+
 ## [0.4.3-dev.5] - 2026-08-01
 
 ### Fixed
@@ -152,7 +166,7 @@ Android, the tagging companion to the video-to-audio extractor.
   token is in plain `SharedPreferences` (swap to `EncryptedSharedPreferences`).
 - Undo is not implemented yet. v0.4.0 adds preview/confirm first so album changes are safer before they are applied.
 
-[Unreleased]: https://github.com/MikereDD/It-Works-On-My-Machine/compare/seraph-v0.4.0...HEAD
-[0.4.0]: https://github.com/MikereDD/It-Works-On-My-Machine/compare/seraph-v0.3.0...seraph-v0.4.0
-[0.3.0]: https://github.com/MikereDD/It-Works-On-My-Machine/compare/seraph-v0.1.0...seraph-v0.3.0
-[0.1.0]: https://github.com/MikereDD/It-Works-On-My-Machine/releases/tag/seraph-v0.1.0
+[Unreleased]: https://github.com/MikereDD/Seraph/compare/seraph-v0.4.0...HEAD
+[0.4.0]: https://github.com/MikereDD/Seraph/compare/seraph-v0.3.0...seraph-v0.4.0
+[0.3.0]: https://github.com/MikereDD/Seraph/compare/seraph-v0.1.0...seraph-v0.3.0
+[0.1.0]: https://github.com/MikereDD/Seraph/releases/tag/seraph-v0.1.0

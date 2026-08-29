@@ -177,11 +177,12 @@ class UpdateManager(private val context: Context) {
 
     companion object {
         const val MANIFEST_URL =
-            "https://raw.githubusercontent.com/MikereDD/It-Works-On-My-Machine/main/Android/Seraph/update-manifest.json"
+            "https://raw.githubusercontent.com/MikereDD/Seraph/main/releases/update.json"
         private val TRUSTED_DOWNLOAD_HOSTS = setOf(
             "raw.githubusercontent.com",
             "github.com",
             "objects.githubusercontent.com",
+            "release-assets.githubusercontent.com",
         )
     }
 }

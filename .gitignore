@@ -3,11 +3,24 @@
 /local.properties
 /.idea/
 .DS_Store
-/build
-/app/build
-/captures
-.externalNativeBuild
-.cxx
+/build/
+/captures/
+.externalNativeBuild/
+.cxx/
+**/build/
 
-# Generated release manifest (publish intentionally)
-# update-manifest.json
+# Release binaries belong in GitHub Releases, not Git history.
+*.apk
+*.aab
+*.apks
+
+# Signing material and credentials must never be committed.
+*.jks
+*.keystore
+keystore.properties
+secrets.properties
+.env
+.env.*
+
+# Local logs / crash exports.
+*.log

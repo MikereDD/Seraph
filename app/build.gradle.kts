@@ -12,8 +12,8 @@ android {
         applicationId = "com.typezero.seraph"
         minSdk = 26
         targetSdk = 35
-        versionCode = 50
-        versionName = "0.4.3-dev.5"
+        versionCode = 51
+        versionName = "0.4.3-dev.6"
         vectorDrawables { useSupportLibrary = true }
     }
 
